@@ -1,6 +1,16 @@
 import { defineConfig } from "drizzle-kit";
 
-const DB_TYPE = process.env.DB_TYPE || "sqlite";
+const DB_URL = process.env.DB_URL || "./app.db";
+
+// Auto-detect database type from URL
+let DB_TYPE: "sqlite" | "mysql" | "postgres";
+if (DB_URL.startsWith("mysql://")) {
+	DB_TYPE = "mysql";
+} else if (DB_URL.startsWith("postgres://") || DB_URL.startsWith("postgresql://")) {
+	DB_TYPE = "postgres";
+} else {
+	DB_TYPE = "sqlite";
+}
 
 const configs = {
 	sqlite: {
@@ -8,7 +18,7 @@ const configs = {
 		out: "./drizzle",
 		dialect: "sqlite" as const,
 		dbCredentials: {
-			url: process.env.DB_URL || "./app.db"
+			url: DB_URL
 		}
 	},
 	mysql: {
@@ -16,7 +26,7 @@ const configs = {
 		out: "./drizzle",
 		dialect: "mysql" as const,
 		dbCredentials: {
-			url: process.env.DB_URL!
+			url: DB_URL
 		}
 	},
 	postgres: {
@@ -24,7 +34,7 @@ const configs = {
 		out: "./drizzle",
 		dialect: "postgresql" as const,
 		dbCredentials: {
-			url: process.env.DB_URL!
+			url: DB_URL
 		}
 	}
 };
