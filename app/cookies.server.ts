@@ -5,5 +5,5 @@ export const authStateCookie = createCookie("oauth-state", {
 	secure: true,
 	sameSite: "lax",
 	maxAge: 60*5,
-	secrets: [process.env.FLICKSELL_COOKIE_SECRET as string]
+	secrets: [process.env.FLICKSELL_COOKIE_SECRET!]
 });
