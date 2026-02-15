@@ -42,16 +42,13 @@ export async function loader({ request }: Route.LoaderArgs) {
 		throw new Response("Missing shop parameter", { status: 400 });
 	}
 
-	if (!process.env.FLICKSELL_OAUTH_URL || !process.env.FLICKSELL_API_KEY || !process.env.FLICKSELL_SCOPES || !process.env.FLICKSELL_REDIRECT_URI) {
+	if (!process.env.FLICKSELL_URL || !process.env.FLICKSELL_API_KEY) {
 		throw new Response("Server configuration error", { status: 500 });
 	}
 
-	const authUrl = new URL(process.env.FLICKSELL_OAUTH_URL);
+	const authUrl = new URL(`${process.env.FLICKSELL_URL}/oauth/authorize/${shop}`);
 	authUrl.searchParams.set("client_id", process.env.FLICKSELL_API_KEY);
-	authUrl.searchParams.set("scope", process.env.FLICKSELL_SCOPES);
-	authUrl.searchParams.set("redirect_uri", process.env.FLICKSELL_REDIRECT_URI);
 	authUrl.searchParams.set("state", nonce);
-	authUrl.searchParams.set("shop", shop);
 
 	return redirect(authUrl.toString(), {
 		headers: {

@@ -46,11 +46,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 		throw new Response("Invalid HMAC", { status: 403 });
 	}
 
-	if (!process.env.FLICKSELL_TOKEN_URL || !process.env.FLICKSELL_API_KEY) {
+	if (!process.env.FLICKSELL_URL || !process.env.FLICKSELL_API_KEY) {
 		throw new Response("Server configuration error", { status: 500 });
 	}
 
-	const response = await fetch(process.env.FLICKSELL_TOKEN_URL, {
+	const response = await fetch(`${process.env.FLICKSELL_URL}/oauth/access_token`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/x-www-form-urlencoded"
