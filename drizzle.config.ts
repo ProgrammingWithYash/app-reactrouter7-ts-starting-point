@@ -22,7 +22,7 @@ const configs = {
 		}
 	},
 	mysql: {
-		schema: "./app/db/schema/schema-mysql.ts",
+		schema: "./app/db/schema/schema.ts",
 		out: "./drizzle",
 		dialect: "mysql" as const,
 		dbCredentials: {
@@ -30,7 +30,7 @@ const configs = {
 		}
 	},
 	postgres: {
-		schema: "./app/db/schema/schema-postgres.ts",
+		schema: "./app/db/schema/schema.ts",
 		out: "./drizzle",
 		dialect: "postgresql" as const,
 		dbCredentials: {
