@@ -1,0 +1,9 @@
+#TUNNEL_URL
+http://localhost:5173
+
+#WINDOWS
+CMD bun run dev
+#MACOS
+CMD bun run dev
+#LINUX
+CMD bun run dev
