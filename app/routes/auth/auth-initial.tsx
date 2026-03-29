@@ -23,11 +23,11 @@ export async function loader({ request }: Route.LoaderArgs) {
 		throw new Response("Server configuration error", { status: 500 });
 	}
 
-	const computed = crypto
+	const inputBuffer = crypto
 		.createHmac("sha256", process.env.FLICKSELL_API_SECRET)
 		.update(sorted)
-		.digest("hex")
-	console.log("[auth-initial] computed hmac:", computed)
+		.digest()
+	console.log("[auth-initial] computed hmac (base64url):", inputBuffer.toString('base64url'))
 
 	const nonce = crypto.randomUUID()
 
@@ -36,8 +36,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		throw new Response("Missing HMAC", { status: 400 });
 	}
 
-	const inputBuffer = Buffer.from(computed, 'hex');
-	const storedBuffer = Buffer.from(hmac, 'hex');
+	const storedBuffer = Buffer.from(hmac, 'base64url');
 	console.log("[auth-initial] buffer lengths — computed:", inputBuffer.length, "stored:", storedBuffer.length)
 
 	if (inputBuffer.length !== storedBuffer.length || !crypto.timingSafeEqual(inputBuffer, storedBuffer)) {
@@ -58,7 +57,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 	}
 
 	const redirectUrl = new URL("/auth/final", url.origin);
-	const authUrl = new URL(`${process.env.FLICKSELL_URL}/appoauth/authorize/${shop}`);
+	const shopUrl = (urlParams("shop") as string).split(".")[0];
+	const authUrl = new URL(`${process.env.FLICKSELL_URL}/${shopUrl}/apps/authorize`);
 	authUrl.searchParams.set("client_id", process.env.FLICKSELL_API_KEY);
 	authUrl.searchParams.set("state", nonce);
 	authUrl.searchParams.set("redirect_url", redirectUrl.toString());
