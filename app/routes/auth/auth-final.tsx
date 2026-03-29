@@ -1,13 +1,13 @@
 import crypto from "crypto"
 import { redirect } from "react-router"
-import type { Route } from "../../+types/root"
+import type { Route } from "./+types/auth-final"
 import { authStateCookie } from "~/cookies.server"
 import { db } from "~/db"
 import { sessions } from "~/db/schema/schema"
 
 export async function loader({ request }: Route.LoaderArgs) {
 	const url = new URL(request.url)
-	const urlParams = url.searchParams.get
+	const urlParams = url.searchParams.get.bind(url.searchParams)
 
 	const nonce = await authStateCookie.parse(request.headers.get("Cookie"))
 	const nonceFromQuery = urlParams("state")
@@ -26,7 +26,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 	url.searchParams.delete("hmac");
 
 	const sorted = [...url.searchParams.entries()]
-		.sort(([a, b]) => a.localeCompare(b))
+		.sort(([a], [b]) => a.localeCompare(b))
 		.map(([k, v]) => `${k}=${v}`)
 		.join("&")
 
@@ -34,15 +34,13 @@ export async function loader({ request }: Route.LoaderArgs) {
 		throw new Response("Server configuration error", { status: 500 });
 	}
 
-	const computed = crypto
+	const inputBuffer = crypto
 		.createHmac("sha256", process.env.FLICKSELL_API_SECRET)
 		.update(sorted)
-		.digest("hex")
+		.digest()
+	const storedBuffer = Buffer.from(hmac, 'base64url');
 
-	const inputBuffer = Buffer.from(computed, 'hex');
-	const storedBuffer = Buffer.from(hmac, 'hex');
-
-	if (!crypto.timingSafeEqual(inputBuffer, storedBuffer)) {
+	if (inputBuffer.length !== storedBuffer.length || !crypto.timingSafeEqual(inputBuffer, storedBuffer)) {
 		throw new Response("Invalid HMAC", { status: 403 });
 	}
 
@@ -50,7 +48,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		throw new Response("Server configuration error", { status: 500 });
 	}
 
-	const response = await fetch(`${process.env.FLICKSELL_URL}/oauth/access_token`, {
+	const response = await fetch(`${process.env.FLICKSELL_URL}/apps/exchange`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/x-www-form-urlencoded"
@@ -68,25 +66,30 @@ export async function loader({ request }: Route.LoaderArgs) {
 			throw new Response("Failed to exchange code for token", { status: 502 });
 		}
 
-		const { access_token, scope } = await response.json();
+	const { access_token, refresh_token, expires_at, created_at, scope } = await response.json();
 
-		if (!access_token) {
-			throw new Response("No access token received", { status: 502 });
-		}
+	if (!access_token) {
+		throw new Response("No access token received", { status: 502 });
+	}
 
-		await db.insert(sessions).values({
-			shop: shop,
+	await db.insert(sessions).values({
+		shop: shop,
+		accessToken: access_token,
+		refreshToken: refresh_token ?? null,
+		expiresAt: expires_at ? new Date(expires_at) : null,
+		createdAt: created_at ? new Date(created_at * 1000) : new Date(),
+		scope: scope,
+		isOnline: false
+	}).onConflictDoUpdate({
+		target: sessions.shop,
+		set: {
 			accessToken: access_token,
+			refreshToken: refresh_token ?? null,
+			expiresAt: expires_at ? new Date(expires_at) : null,
 			scope: scope,
-			isOnline: false
-		}).onConflictDoUpdate({
-			target: sessions.shop,
-			set: {
-				accessToken: access_token,
-				scope: scope,
-				updatedAt: new Date()
-			}
-		})
+			updatedAt: new Date()
+		}
+	})
 
 		return redirect("/")
 }
