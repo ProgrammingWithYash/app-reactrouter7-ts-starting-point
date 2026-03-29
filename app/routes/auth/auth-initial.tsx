@@ -1,6 +1,6 @@
 import crypto from "crypto"
 import { redirect } from "react-router"
-import type { Route } from "../../+types/root"
+import type { Route } from "./+types/auth-initial"
 import { authStateCookie } from "~/cookies.server"
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -46,9 +46,12 @@ export async function loader({ request }: Route.LoaderArgs) {
 		throw new Response("Server configuration error", { status: 500 });
 	}
 
-	const authUrl = new URL(`${process.env.FLICKSELL_URL}/oauth/authorize/${shop}`);
+	const redirectUrl = new URL("/auth/final", url.origin);
+
+	const authUrl = new URL(`${process.env.FLICKSELL_URL}/appoauth/authorize/${shop}`);
 	authUrl.searchParams.set("client_id", process.env.FLICKSELL_API_KEY);
 	authUrl.searchParams.set("state", nonce);
+	authUrl.searchParams.set("redirect_url", redirectUrl.toString());
 
 	return redirect(authUrl.toString(), {
 		headers: {
