@@ -48,7 +48,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 		throw new Response("Server configuration error", { status: 500 });
 	}
 
-	const response = await fetch(`${process.env.FLICKSELL_URL}/apps/exchange`, {
+	const response = await fetch(`${process.env.FLICKSELL_URL}/oauth-app/exchange`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/x-www-form-urlencoded"
@@ -60,13 +60,22 @@ export async function loader({ request }: Route.LoaderArgs) {
 			})
 		})
 
-		if (!response.ok) {
-			const errorText = await response.text();
-			console.error("Token exchange failed:", errorText);
-			throw new Response("Failed to exchange code for token", { status: 502 });
-		}
+	const responseText = await response.text();
 
-	const { access_token, refresh_token, expires_at, created_at, scope } = await response.json();
+	if (!response.ok) {
+		console.error("Token exchange failed:", responseText);
+		throw new Response("Failed to exchange code for token", { status: 502 });
+	}
+
+	let tokenData: { access_token: string, refresh_token?: string, expires_at?: string, created_at?: number, scope?: string };
+	try {
+		tokenData = JSON.parse(responseText);
+	} catch {
+		console.error("Token exchange response (not JSON):\n", responseText);
+		throw new Response("Token exchange returned non-JSON response", { status: 502 });
+	}
+
+	const { access_token, refresh_token, expires_at, created_at, scope } = tokenData;
 
 	if (!access_token) {
 		throw new Response("No access token received", { status: 502 });
