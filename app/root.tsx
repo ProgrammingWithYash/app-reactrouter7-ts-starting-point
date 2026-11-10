@@ -7,6 +7,7 @@ import {
   Scripts,
   ScrollRestoration,
   useNavigate,
+  useNavigation,
   useRouteLoaderData,
 } from "react-router";
 
@@ -44,6 +45,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const navigate = useNavigate();
+  const busy = useNavigation().state !== "idle";
+
+  // Admin's loading bar, for as long as any page of the app is waiting on the server.
+  useEffect(() => {
+    flicksell.loading(busy);
+  }, [busy]);
 
   useEffect(() => {
     // The app's pages, listed under it in admin's sidebar.

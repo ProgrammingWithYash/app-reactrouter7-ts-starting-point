@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Form, useFetcher, useNavigation } from "react-router";
+import { Form, useFetcher } from "react-router";
 import type { Route } from "./+types/home";
 import { flicksell as server } from "~/flicksell.server";
 import { addTodo, clearDone, getSettings, listTodos, setDone } from "~/db/store.server";
@@ -57,7 +57,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 	const clear = useFetcher();
 	const title = useRef<HTMLInputElement>(null);
 	const [product, setProduct] = useState<Product | null>(null);
-	const busy = useNavigation().state !== "idle";
 
 	const shown = settings.hideDone ? todos.filter((todo) => !todo.done) : todos;
 	const doneCount = todos.filter((todo) => todo.done).length;
@@ -75,11 +74,6 @@ export default function Home({ loaderData, actionData }: Route.ComponentProps) {
 			}],
 		});
 	}, [settings.listName, doneCount]);
-
-	// Admin's loading bar, while this page is waiting on the server.
-	useEffect(() => {
-		flicksell.loading(busy);
-	}, [busy]);
 
 	useEffect(() => {
 		if (actionData && "added" in actionData) {
