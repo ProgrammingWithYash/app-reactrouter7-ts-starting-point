@@ -5,10 +5,12 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useRouteLoaderData,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { apiKey } from "./flicksell.server";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -23,12 +25,19 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+// The client id is public; the bridge reads it from the page to know which app this is.
+export function loader() {
+  return { apiKey };
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const data = useRouteLoaderData<typeof loader>("root");
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {data?.apiKey && <meta name="flicksell-api-key" content={data.apiKey} />}
         <Meta />
         <Links />
       </head>

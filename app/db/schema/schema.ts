@@ -1,15 +1,18 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import type { OnlineAccessInfo } from "@flicksell/api";
 
+// One row per session, keyed the way @flicksell/api names them: the app's own
+// session on a store is "offline_<shop>", a user's is "<shop>_<user id>". So a
+// store can hold both at once.
 export const sessions = sqliteTable("sessions", {
-	id: integer("id").primaryKey({ autoIncrement: true }),
-	shop: text("shop").notNull().unique(),
-	isOnline: integer("is_online", {mode: "boolean"}).notNull().default(false),
+	id: text("id").primaryKey(),
+	shop: text("shop").notNull(),
+	siteId: integer("site_id").notNull(),
+	isOnline: integer("is_online", { mode: "boolean" }).notNull().default(false),
 	scope: text("scope"),
-	expiresAt: integer("expires_at", {mode: "timestamp"}),
-	accessToken: text("access_token").notNull(),
-	userId: integer("user_id"), // Bigint
+	expires: integer("expires", { mode: "timestamp_ms" }),
+	accessToken: text("access_token"),
 	refreshToken: text("refresh_token"),
-	refreshTokenExpiresAt: integer("refresh_token_expires_at", {mode: "timestamp"}),
-	createdAt: integer("created_at", {mode: "timestamp"}).$defaultFn(() => new Date()),
-	updatedAt: integer("updated_at", {mode: "timestamp"}).$defaultFn(() => new Date())
-})
+	refreshTokenExpires: integer("refresh_token_expires", { mode: "timestamp_ms" }),
+	onlineAccessInfo: text("online_access_info", { mode: "json" }).$type<OnlineAccessInfo>(),
+});

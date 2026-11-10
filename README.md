@@ -1,87 +1,40 @@
-# Welcome to React Router!
+# Flicksell app starter
 
-A modern, production-ready template for building full-stack React applications using React Router.
+A React Router app that runs inside Flicksell admin.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
-
-## Features
-
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
-
-## Getting Started
-
-### Installation
-
-Install the dependencies:
-
-```bash
-npm install
-```
-
-### Development
-
-Start the development server with HMR:
-
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
+## Run it
 
 ```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
+flicksell app dev
 ```
 
-## Styling
+That starts the dev server, tunnels Flicksell to it, and installs the app on the
+store you pick. Open the app from **Apps** in that store's admin.
 
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+## How it works
 
----
+- `flicksell.app.toml` — the app's identity and the scopes it asks for.
+- `flicksell.web.toml` — how to run it locally.
+- `app/flicksell.server.ts` — the one place Flicksell is configured.
+- `app/routes/home.tsx` — authenticates the request and calls the Admin API.
+- `app/db/` — where access tokens are kept (SQLite by default; set `DB_URL` for another database).
 
-Built with ❤️ using React Router.
+Every request from admin carries a session token. `flicksell.authenticate.admin(request)`
+checks it and gives you an Admin API client:
+
+```ts
+const { admin, session } = await flicksell.authenticate.admin(request);
+const { data } = await admin.graphql(`{ products(first: 10) { nodes { id title } } }`);
+```
+
+For work with nobody looking at the app (a scheduled job, a webhook):
+
+```ts
+const offline = await flicksell.offline("store-name.myflicksell.com");
+```
+
+## Publish
+
+```
+flicksell app deploy
+```

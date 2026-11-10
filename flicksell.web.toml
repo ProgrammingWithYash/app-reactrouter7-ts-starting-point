@@ -1,0 +1,6 @@
+# How `flicksell app dev` runs this app on your machine. The CLI starts the
+# command with PORT set to the port below and tunnels Flicksell to it.
+port = 5173
+
+[commands]
+dev = "npm run dev"
