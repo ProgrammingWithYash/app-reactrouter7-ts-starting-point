@@ -16,7 +16,11 @@ store you pick. Open the app from **Apps** in that store's admin.
 - `flicksell.app.toml` — the app's identity and the scopes it asks for.
 - `flicksell.web.toml` — how to run it locally.
 - `app/flicksell.server.ts` — the one place Flicksell is configured.
-- `app/routes/home.tsx` — authenticates the request and calls the Admin API.
+- `app/root.tsx` — loads the app bridge and lists the app's pages in admin's sidebar.
+- `app/routes/home.tsx` — a todo list: authenticates the request, calls the Admin API, and uses admin's
+  title bar, loading bar, toasts and picker.
+- `app/routes/settings.tsx` — a form that uses admin's save bar.
+- `app/routes/session-token.ts` — gets a fresh session token when a page is reloaded.
 - `app/db/` — where access tokens are kept (SQLite by default; set `DB_URL` for another database).
 
 Every request from admin carries a session token. `flicksell.authenticate.admin(request)`

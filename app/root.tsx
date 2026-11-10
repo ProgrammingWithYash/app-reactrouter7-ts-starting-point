@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   isRouteErrorResponse,
   Links,
@@ -5,29 +6,17 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useNavigate,
   useRouteLoaderData,
 } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./app.css";
-import { apiKey } from "./flicksell.server";
+import { flicksell as server } from "./flicksell.server";
 
-export const links: Route.LinksFunction = () => [
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
-  },
-];
-
-// The client id is public; the bridge reads it from the page to know which app this is.
+// The client id and the bridge's address are public; the secret never leaves the server.
 export function loader() {
-  return { apiKey };
+  return { apiKey: server.apiKey, appBridgeUrl: server.appBridgeUrl };
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -37,7 +26,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {data?.apiKey && <meta name="flicksell-api-key" content={data.apiKey} />}
+        {data && <meta name="flicksell-api-key" content={data.apiKey} />}
+        {/* First, before anything fetches: from here on every request to this
+            app's backend carries a session token. */}
+        {data && <script src={data.appBridgeUrl} />}
         <Meta />
         <Links />
       </head>
@@ -51,6 +43,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // The app's pages, listed under it in admin's sidebar.
+    flicksell.nav.set([
+      { label: "Todos", path: "/" },
+      { label: "Settings", path: "/settings" },
+    ]);
+
+    // Someone chose one of them there: move without reloading the frame.
+    const onNavigate = (event: Event) => {
+      event.preventDefault();
+      navigate((event as CustomEvent<{ path: string }>).detail.path);
+    };
+    addEventListener("flicksell:navigate", onNavigate);
+    return () => removeEventListener("flicksell:navigate", onNavigate);
+  }, [navigate]);
+
   return <Outlet />;
 }
 
@@ -64,7 +74,9 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
     details =
       error.status === 404
         ? "The requested page could not be found."
-        : error.statusText || details;
+        : error.status === 401
+          ? "Open this app from Apps in your Flicksell admin."
+          : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;
     stack = error.stack;
